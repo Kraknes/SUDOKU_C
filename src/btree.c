@@ -29,6 +29,8 @@ int list_size(struct list *list){
     return list->length;
 }
 
+
+
 void insertion(struct list *list, void *item){
     if (list->length == 0){
         struct node *t_node = malloc(sizeof(struct node));
@@ -36,7 +38,7 @@ void insertion(struct list *list, void *item){
         list->root = t_node;
     }
     else{
-        
+
     } 
 }
 
