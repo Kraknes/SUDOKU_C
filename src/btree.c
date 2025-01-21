@@ -3,7 +3,7 @@
 
 struct node
 { 
-    void *item; 
+    int *item; 
     struct node* left; 
     struct node* right;
 };
@@ -29,6 +29,24 @@ int list_size(struct list *list){
     return list->length;
 }
 
+void delete_node(struct list *list, int *item){
+    struct node *tmp = list->root;
+    if (item == tmp->item){
+        if ((tmp->left != NULL) && (tmp->right != NULL))
+            {
+                // Noe her om at en node går opp 
+            }
+        else if ((tmp->left != NULL) || (tmp->right != NULL))
+            {
+                // Noe her om at en node går opp 
+            }        
+        else if ((tmp->left = NULL) && (tmp->right = NULL))
+            {
+                
+            }                    
+    }
+
+}
 
 
 void insertion(struct list *list, void *item){
