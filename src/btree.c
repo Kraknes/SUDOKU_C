@@ -29,20 +29,35 @@ int list_size(struct list *list){
     return list->length;
 }
 
+struct node recursive_node(struct node *node){
+    struct node *rec_node = node;
+    if (rec_node->left != NULL){
+        rec_node = rec_node->left;
+        recursive_node(rec_node);
+    } 
+    else{
+        return *rec_node;
+    }
+    
+    
+}
+
 void delete_node(struct list *list, int *item){
     struct node *tmp = list->root;
     if (item == tmp->item){
         if ((tmp->left != NULL) && (tmp->right != NULL))
             {
-                // Noe her om at en node går opp 
+                *tmp = recursive_node(tmp);
+                
             }
         else if ((tmp->left != NULL) || (tmp->right != NULL))
             {
                 // Noe her om at en node går opp 
             }        
-        else if ((tmp->left = NULL) && (tmp->right = NULL))
+        else ((tmp->left = NULL) && (tmp->right = NULL))
             {
-                
+                printf("\nList is now empty");
+                free(tmp);
             }                    
     }
 
