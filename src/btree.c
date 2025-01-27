@@ -47,8 +47,10 @@ void delete_node(struct list *list, int *item){
     if (item == tmp->item){
         if ((tmp->left != NULL) && (tmp->right != NULL))
             {
+                tmp = tmp->right;
                 *tmp = recursive_node(tmp);
                 
+
             }
         else if ((tmp->left != NULL) || (tmp->right != NULL))
             {
