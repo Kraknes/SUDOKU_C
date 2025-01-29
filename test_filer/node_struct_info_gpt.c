@@ -9,6 +9,13 @@ typedef struct LargeNode {
     char name[50];
 } LargeNode;
 
+// Er lik den ovenfor, eneste forskjell er at man må skrive struct Largenode hver eneste gang den brukes.
+struct Largenode{
+    int id;
+    double values[1000];  // Large array inside the struct
+    char name[50];
+};
+
 // Function that returns a struct by value (inefficient for large structs)
 LargeNode create_LargeNode() {
     LargeNode node;

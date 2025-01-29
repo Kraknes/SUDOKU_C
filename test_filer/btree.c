@@ -42,6 +42,8 @@ struct node recursive_node(struct node *node){
     
 }
 
+
+
 void delete_node(struct list *list, int *item){
     struct node *tmp = list->root;
     if (item == tmp->item){
@@ -54,6 +56,7 @@ void delete_node(struct list *list, int *item){
             }
         else if ((tmp->left != NULL) || (tmp->right != NULL))
             {
+                int a = 5;
                 // Noe her om at en node går opp 
             }        
         else ((tmp->left = NULL) && (tmp->right = NULL))
@@ -77,3 +80,6 @@ void insertion(struct list *list, void *item){
     } 
 }
 
+void main(){
+    
+}
