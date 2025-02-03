@@ -7,7 +7,7 @@ typedef struct node
 { 
     int item; 
     struct node* next; 
-} node;
+} l_node;
 
 typedef struct list{
     struct node *head;
@@ -15,8 +15,8 @@ typedef struct list{
     int length; 
 } l_list;
 
-node *create_node(){
-    node *n_node = malloc(sizeof(node));
+l_node *create_node(){
+    l_node *n_node = malloc(sizeof(l_node));
     n_node->item = 0;
     n_node->next = NULL;
     return n_node;
@@ -27,20 +27,25 @@ typedef struct iter_list{
     struct node *node;
 } iter_list;
 
-struct list *create_list(){
-    struct list *r_list = malloc(sizeof(struct list));
+l_list *create_list(){
+    l_list *r_list = malloc(sizeof(l_list));
     r_list->head = NULL;
     r_list->tail = NULL;
     r_list->length = 0;
     return r_list;
 }
 
-void remove_from_list(struct list *list, int item){
+
+void remove_node(l_list *list, int item){
     if (list->head == NULL){
         printf("List has no head");
         return;
     }
     struct node *tmp = list->head;
+    if (tmp == NULL){
+        printf("\n List exhausted - Returns");
+        return;
+    }
     if (item == tmp->item){
         list->head = tmp->next;
         free(tmp);
@@ -58,15 +63,28 @@ void remove_from_list(struct list *list, int item){
             return;
         }
         else {
-            tmp = tmp->next;
+            if (tmp->next != NULL){
+                tmp = tmp->next;
+            }
+            else{
+                return;
+            }
+            
         }
     }
 }
 
+void remove_from_list(l_list *list, l_node *node){
+    if (node == NULL){
+        return;
+    }
+    else{
+        remove_node(list, node->item);
+    }
+}
 
-
-void append_list(struct list *a_list, int item){
-    node *a_node = create_node();
+void append_list(l_list *a_list, int item){
+    l_node *a_node = create_node();
     a_node->item = item;
     if (a_list->length == 0){
         a_list->head = a_node;
@@ -80,27 +98,26 @@ void append_list(struct list *a_list, int item){
     }
 }
 
-int list_size(struct list *list){
+int list_size(l_list *list){
     return list->length;
 }
 
 // HER BEGYNNER SUDOKU
 
 typedef struct Square {
-    struct Board *board;
+    struct sudoku_board *board;
     struct Element *row;
     struct Element *column;
     struct Element *box;
-    struct l_list *forbidden_list; 
+    struct list *legal_list; 
     int number;
-    int legal_values[9];
-    int iterator;
+    struct Square *next;
 } Square;
 
 typedef struct Element {
     Square *square_lists[9];
     int used_values[9];
-    struct l_list *used_list;
+    l_list *used_list;
 } Element;
 
 typedef struct sudoku_board{
@@ -110,8 +127,53 @@ typedef struct sudoku_board{
     struct Element *columns[9];
     struct Element *boxes[9];
     struct Square *square_list[81]; 
-    int used_squares[81];
+    struct s_list *used_squares;
+    int solved;
 } Board;
+
+// EGEN SQUARE LINKED LIST
+
+typedef struct s_list{
+    struct Square *head;
+    struct Square *tail;
+    int length; 
+} s_list;
+
+s_list *create_s_list(){
+    s_list *r_list = malloc(sizeof(s_list));
+    r_list->head = NULL;
+    r_list->tail = NULL;
+    r_list->length = 0;
+    return r_list;
+}
+
+void append_s_list(s_list *a_list, struct Square *s){
+    if (a_list->length == 0){
+        a_list->head = s;
+        a_list->tail = s;
+        a_list->length++;
+    }
+    else {
+        s->next = a_list->head;
+        a_list->head = s;
+        a_list->length++;
+    }
+}
+
+void free_s_list(s_list *list){
+    for (int i = 0; i < 81; i++)
+    {
+        struct Square *s = list->head;
+        if (s == NULL){
+            break;
+        }
+        else{
+            list->head = s->next;
+        }
+    }
+}
+
+// FUNKSJONER FOR SUDOKU
 
 // lager elementer og legger dem til board
 void create_elements(Board *board){
@@ -130,33 +192,27 @@ void create_elements(Board *board){
     }
 }
 
+void creating_legal_l_list(Square *s){
+    s->legal_list = create_list();
+    for (int i = 0; i < 9; i++)
+    {
+        append_list(s->legal_list, i+1);
+    }
+}
+
 // Lager alle Squares og legger dem til board
 void create_squares(Board *board){
     for (int i = 0; i < board->length; i++)
     {
         Square *s = malloc(sizeof(Square));
-        memcpy(s->legal_values, (int[]){1,2,3,4,5,6,7,8,9}, sizeof(s->legal_values));
+        s->board = board;
+        creating_legal_l_list(s);
         board->square_list[i] = s;
     }
 }
 
-// Legger alle squares til sitt element
-int squares_to_element(Board *board){
-    for (int i = 0; i < 81; i++)
-    {
-        Square *s = board->square_list[i];
-        s->row = board->rows[((int)i/9)];
-        s->column = board->columns[(i%9)];
-        s->box = board->boxes[(int)((i%9)/3)+((int)((i/9)/3)*3)];
-        square_to_element_list(s, s->row);
-        square_to_element_list(s, s->column);
-        square_to_element_list(s, s->box);
-    }
-    return 0;
-}
-
 // Hjelpe funksjon til squares_to_element, legger alle squares i en egen liste for hvert element
-void square_to_element_list(Square *s, Element list[]){
+void square_to_el_list(Square *s, Element list[]){
     for (int i = 0; i < 9; i++)
         {
             if (list->square_lists[i] == 0){
@@ -169,6 +225,21 @@ void square_to_element_list(Square *s, Element list[]){
         }
 }
 
+// Legger alle squares til sitt element
+int squares_to_element(Board *board){
+    for (int i = 0; i < 81; i++)
+    {
+        Square *s = board->square_list[i];
+        s->row = board->rows[((int)i/9)];
+        s->column = board->columns[(i%9)];
+        s->box = board->boxes[(int)((i%9)/3)+((int)((i/9)/3)*3)];
+        square_to_el_list(s, s->row);
+        square_to_el_list(s, s->column);
+        square_to_el_list(s, s->box);
+    }
+    return 0;
+}
+
 // Legger verdien fra sudokubrettet til hver Square
 void value_to_square(Board *board){
     for (int i = 0; i < board->length; i++)
@@ -178,61 +249,89 @@ void value_to_square(Board *board){
 }
 
 // Lager en liste for hvert element med brukte tall fra sine squares(illegal numbers)
-void creating_used_numbers_2(Element *element_lists[]){
+void creating_used_numbers(Element *element_l[]){
     for (int i = 0; i < 9; i++){
-        int count = 0;
-        Element *e = element_lists[i];
-        memset(e->used_values, 0, sizeof(int)*9);
+        Element *e = element_l[i];
+        l_list *l = create_list();
+        e->used_list = l;
         for (int j = 0; j < 9; j++)
         {
             if (e->square_lists[j]->number != 0){
-                e->used_values[count] = e->square_lists[j]->number;
-                count++;
+                append_list(l, e->square_lists[j]->number);
+                continue;
             }
         }        
     }
 }
 
-void creating_u_num_3(Element *element_l[]){
-    
-}
-
-// Lager en liste over gyldige tall
-void creating_legal_numbers(Board *board){
-    for (int i = 0; i < board->length; i++)
-    {
-        Square *s = board->square_list[i];
-        making_illegal_list(s->row, s);
-        making_illegal_list(s->column, s);
-        making_illegal_list(s->box, s);
-    } 
-}
-
-// Hjelpe funksjon for creating legal numbers
-void making_illegal_list(Element *used_list, Square *s){
+void making_illegal_l_list(Element *el, Square *s){
+    if (s->number != 0){
+        return;
+    }
+    l_node *node = el->used_list->head;
     for (int i = 0; i < 9; i++)
-    {
-        if (used_list->used_values[i] == 0){
+    {   
+        if (node == NULL)
+        {
             break;
         }
         else{
-            for (int j = 0; j < 9; j++)
+            remove_from_list(s->legal_list, node);
+            node = node->next;
+        }
+
+    }
+    
+
+    // hvordan iterere videre? 
+
+}
+
+// Lager en liste over gyldige tall
+void creating_legal_numbers(Square *s){
+        making_illegal_l_list(s->row, s);
+        making_illegal_l_list(s->column, s);
+        making_illegal_l_list(s->box, s);
+}
+
+void insert_number(Square *s){
+    creating_legal_numbers(s);
+    if (s->legal_list->head == NULL){
+        // backtrack();
+    }
+    else {
+        s->number = s->legal_list->head->item;
+        append_s_list(s->board->used_squares, s);
+        creating_used_numbers(s->row);
+        creating_used_numbers(s->column);
+        creating_used_numbers(s->box);
+    }
+}
+
+void solve(Board *myboard){
+    myboard->solved = 1;
+    for (int i = 0; i < myboard->length; i++)
+    {
+        Square *s =myboard->square_list[i];
+        if (s->number != 0){
+            continue;
+        }
+        else{
+            insert_number(s);
+            myboard->array[i] = s->number;
+            if (s->number == 0)
             {
-                if (used_list->used_values[i] == s->legal_values[j]){
-                    s->legal_values[j] = 0;
-                    break;
-                }
-                else{
-                    continue;
-                }
+                myboard->solved = 0;
+                break;
             }
-            
+            else{
+                continue;
+            }
         }
     }
 }
 
-
-// Free alle strukturer
+// Free alle strukturer OBS Funker ikke helt enda
 void free_structs(Board *myboard){
     for (int i = 0; i < 9; i++) {
         free(myboard->rows[i]);
@@ -240,32 +339,44 @@ void free_structs(Board *myboard){
         free(myboard->boxes[i]);
     }
     for (int i = 0; i < 81; i++) {
-        free(myboard->square_list[i]);
+        Square *s = myboard->square_list[i];
+        for (int j= 0; j < 9; j++)
+        {
+            l_node *tmp = s->legal_list->head->next;
+            free(s->legal_list->head);
+            s->legal_list->head = tmp;
+        }
+        
+        free(s);
     }
     free(myboard); 
 }
 
-
-void solve(Board *Board){
-
+// Printer bordet
+char print_board(Board *myboard){
+    int count = -1;
+    printf("\n[ ");
+    for (int i = 0; i < myboard->length; i++)
+    {
+        if (count%9 == 8){
+            printf("]\n[ ");
+        }
+        printf("%d, ", myboard->array[i]);
+        count++;
+    }
+    printf("]\n");
 }
 
 int main(){
     // Lager myboard
     Board *myboard = malloc(sizeof(Board));
     myboard->length = 81;
+    myboard->solved = 0;
+    myboard->used_squares = create_s_list();
     int sudoku_board[] = {0,0,4,3,0,0,2,0,9,0,0,5,0,0,9,0,0,1,0,7,0,0,6,0,0,4,3,0,0,6,0,0,2,0,8,7,1,9,0,0,0,7,4,0,0,0,5,0,0,8,3,0,0,0,6,0,0,0,0,0,1,0,5,0,0,3,5,0,8,6,9,0,0,4,2,9,1,0,3,0,0
     };
     memcpy(myboard->array, sudoku_board, (81 * sizeof(int)));
-    for (int i = 0; i < 81; i++)
-    {
-        // printf("\nmyboard er: %d, og sudokuboard er: %d", myboard->array[i], sudoku_board[i]);
-    }
-    
-    // Test for element og node, funker
-    struct Element *row = malloc(sizeof(Element));
-    Square *node = malloc(sizeof(Square));
-    node->row = row;
+
 
     // Lager elementer til myboard
     create_elements(myboard);
@@ -280,37 +391,28 @@ int main(){
     value_to_square(myboard);
 
     // Legge til brukte tall i element liste
-    creating_used_numbers_2(myboard->rows);
-    creating_used_numbers_2(myboard->columns);
-    creating_used_numbers_2(myboard->boxes);
+    creating_used_numbers(myboard->rows);
+    creating_used_numbers(myboard->columns);
+    creating_used_numbers(myboard->boxes);
 
     // Må lage funskjon for at hver square har sin egen liste over lovlige tall
-    creating_legal_numbers(myboard);
+    for (int i = 0; i < myboard->length; i++){
+        Square *s = myboard->square_list[i];
+        creating_legal_numbers(s);
+    }
 
     // FUnksjon solve 
-    solve(myboard);
+    
 
     // Funksjon for å free plass
-    free_structs(myboard);
+    // free_structs(myboard);
+    // while (myboard->solved == 0){
+    //     solve(myboard);
+    // }
 
-    printf("No segmentation fault - Complete success\n");
-
-
-    struct list *test_list = create_list();
-    for (int i = 0; i < 5; i++){
-        append_list(test_list, i);
-        } 
-    printf("\nList length: %d", list_size(test_list));
-    remove_from_list(test_list, 3);
-    printf("\nList length: %d", list_size(test_list));
-    struct node *tmp = test_list->head;
-    for (int i = 0; i < test_list->length; i++){
-        printf("\n%d", tmp->item);
-        tmp = tmp->next;
-        } 
-    free(tmp);
-
-
+    printf("\nNo segmentation fault - Complete success");
+    
+    print_board(myboard);
     return 0;
 }
 
