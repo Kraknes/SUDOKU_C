@@ -319,6 +319,7 @@ void solve(Board *myboard){
         else{
             insert_number(s);
             myboard->array[i] = s->number;
+            print_board(myboard);
             if (s->number == 0)
             {
                 myboard->solved = 0;
