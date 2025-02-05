@@ -74,6 +74,7 @@ void remove_node(l_list *list, int item){
     }
 }
 
+// Fjernen en node fra en lenket liste GENERELL
 void remove_from_list(l_list *list, l_node *node){
     if (node == NULL){
         return;
@@ -82,21 +83,43 @@ void remove_from_list(l_list *list, l_node *node){
         remove_node(list, node->item);
     }
 }
-
+// Legger til en ulovlige tall (item) til en element sin lenket liste 
 void append_list(l_list *a_list, int item){
-    l_node *a_node = create_node();
+    l_node *a_node = create_node(); // ~~~~~~~~~~~~~~~~~~NOE RART SKJER HER, DEN ENDRER TALL PÅ ALLEREDE EKSISTERENDE NODER
     a_node->item = item;
+    // Hvis listen er tom, legger noden til som head og tail
     if (a_list->length == 0){
         a_list->head = a_node;
         a_list->tail = a_node;
         a_list->length++;
     }
+    // en iterator for å finne om item er der i listen allerede
     else {
+        l_node *tmp = a_list->head;
+        for (int i = 0; i < 9; i++)
+        {
+            // Hvis temp har ingen node
+            if (tmp == NULL){
+                break;
+            }
+            // hvis Item eksistere i listen fra før vil den ikke legge til listen(Skal bare være en tilfelle per tall)
+            else if (tmp->item == a_node->item)
+            {
+                free(tmp);
+                return;
+            }
+            else{
+                tmp = tmp->next;
+            }
+        } 
+        // Hvis det er et nytt tall skjer dette
+        free(tmp);
         a_node->next = a_list->head;
         a_list->head = a_node;
         a_list->length++;
-    }
+        }
 }
+
 
 int list_size(l_list *list){
     return list->length;
@@ -192,6 +215,7 @@ void create_elements(Board *board){
     }
 }
 
+// En del av create_Square, lager en lenket liste av 1-9 lovlige tall (skal bli brukt som grunnlag for legal numbers)
 void creating_legal_l_list(Square *s){
     s->legal_list = create_list();
     for (int i = 0; i < 9; i++)
@@ -200,7 +224,7 @@ void creating_legal_l_list(Square *s){
     }
 }
 
-// Lager alle Squares og legger dem til board
+// Lager alle 81 Squares og legger dem til i en liste til Board struktur
 void create_squares(Board *board){
     for (int i = 0; i < board->length; i++)
     {
@@ -225,7 +249,7 @@ void square_to_el_list(Square *s, Element list[]){
         }
 }
 
-// Legger alle squares til sitt element
+// Legger alle squares til sitt element og referanse til elementene i square
 int squares_to_element(Board *board){
     for (int i = 0; i < 81; i++)
     {
@@ -248,6 +272,16 @@ void value_to_square(Board *board){
     }   
 }
 
+// I bruk til solver funksjonen. Oppdaterer element used numbers liste etter en annen square har valgt sitt tall.
+void creating_used_numbers_solve(Element *element){
+    for (int j = 0; j < 9; j++)
+        {
+            if (element->square_lists[j]->number != 0){
+                append_list(element->used_list, element->square_lists[j]->number);
+            }
+        }        
+}
+
 // Lager en liste for hvert element med brukte tall fra sine squares(illegal numbers)
 void creating_used_numbers(Element *element_l[]){
     for (int i = 0; i < 9; i++){
@@ -264,6 +298,7 @@ void creating_used_numbers(Element *element_l[]){
     }
 }
 
+// En del av creating legal numbers, ignorer denne i solver()
 void making_illegal_l_list(Element *el, Square *s){
     if (s->number != 0){
         return;
@@ -279,35 +314,35 @@ void making_illegal_l_list(Element *el, Square *s){
             remove_from_list(s->legal_list, node);
             node = node->next;
         }
-
     }
-    
-
-    // hvordan iterere videre? 
-
 }
 
-// Lager en liste over gyldige tall
+// Lager en lenket liste med gyldige tall for Square med å bruke elementene sine
 void creating_legal_numbers(Square *s){
         making_illegal_l_list(s->row, s);
         making_illegal_l_list(s->column, s);
         making_illegal_l_list(s->box, s);
 }
 
+// En del av solver funksjonen for å inserte nummer
 void insert_number(Square *s){
+    // Lager en liste over lovlige tall å bruke
     creating_legal_numbers(s);
     if (s->legal_list->head == NULL){
         // backtrack();
     }
     else {
+        // Legger til sitt tall (Square) fra første i lenket liste (Head) over lovlige tall i Squaren, deretter fjernes tallet fra den lovlige tall listen til Squaren
         s->number = s->legal_list->head->item;
+        remove_from_list(s->legal_list, s->legal_list->head);
         append_s_list(s->board->used_squares, s);
-        creating_used_numbers(s->row);
-        creating_used_numbers(s->column);
-        creating_used_numbers(s->box);
+        creating_used_numbers_solve(s->row);
+        creating_used_numbers_solve(s->column);
+        creating_used_numbers_solve(s->box);
     }
 }
 
+// Solver funskjonen
 void solve(Board *myboard){
     myboard->solved = 1;
     for (int i = 0; i < myboard->length; i++)
@@ -354,7 +389,7 @@ void free_structs(Board *myboard){
 }
 
 // Printer bordet
-char print_board(Board *myboard){
+int print_board(Board *myboard){
     int count = -1;
     printf("\n[ ");
     for (int i = 0; i < myboard->length; i++)
@@ -366,6 +401,7 @@ char print_board(Board *myboard){
         count++;
     }
     printf("]\n");
+    return 0;
 }
 
 int main(){
@@ -403,17 +439,15 @@ int main(){
     }
 
     // FUnksjon solve 
-    
-
-    // Funksjon for å free plass
-    // free_structs(myboard);
-    // while (myboard->solved == 0){
-    //     solve(myboard);
-    // }
+    while (myboard->solved == 0){
+        solve(myboard);
+    }
 
     printf("\nNo segmentation fault - Complete success");
     
     print_board(myboard);
+
+    
     return 0;
 }
 
