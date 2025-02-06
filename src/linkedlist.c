@@ -6,7 +6,7 @@
 
 #include "list.h"
 #include "printing.h"
-
+#include <stdio.h>
 #include <stdlib.h>
 
 
@@ -30,7 +30,7 @@ struct list_iter {
 };
 
 
-
+// Lager og returner en dobbellenket liste. Inneholder peker til head og tail, og en sammenligning funksjon for elementer. Har variabel for lengde. 
 list_t *list_create(cmp_fn cmpfn) {
     list_t *list = malloc(sizeof(list_t));
     list->head = NULL;
@@ -40,11 +40,13 @@ list_t *list_create(cmp_fn cmpfn) {
     return list;
 }
 
+// Ødelegger listen ved å frigi minnet til listen og en item
 void list_destroy(list_t *list, free_fn item_free) {
     free(list);
     free(item_free);
 }
 
+// returnere lengden av listen
 size_t list_length(list_t *list) {
     if (list->length == 0) {
         return 0;
@@ -53,9 +55,11 @@ size_t list_length(list_t *list) {
 
 }
 
+// Lager en node og lagre pekeren til noden, setter den til head av listen. To forksjellige scenarier: En der listen er tom og en der listen inneholder noder fra før.
 int list_addfirst(list_t *list, void *item) {
     lnode_t *first_node = malloc(sizeof(lnode_t));
     if (first_node == NULL)
+    
     {
         printf("\nERROR: Failed to allocate memory to new node to head");
         return -1;
@@ -75,21 +79,30 @@ int list_addfirst(list_t *list, void *item) {
     return 0;
 }
 
+// Samme som funksjonen over bare legger til node i tail. Har også to scenarier ved en tom eller ikke liste. 
 int list_addlast(list_t *list, void *item) {
-    lnode_t *last_node = malloc(sizeof(lnode_t));
+    lnode_t *last_node = malloc(sizeof(lnode_t)); 
     if (last_node == NULL)
     {
         printf("\nERROR: Failed to allocate memory to new node to tail");
         return -1;
     }
     last_node->item = item;
-    last_node->prev = list->tail;
-    list->tail->next = last_node;
-    list->tail = last_node;
-    list->length++;
+    if (list->length == 0){
+        list->head = last_node;
+        list->tail = last_node;
+        list->length++;
+    }
+    else{ 
+        last_node->prev = list->tail;
+        list->tail->next = last_node;
+        list->tail = last_node;
+        list->length++;
+    }
     return 0;
 }
 
+// Fjerner første node i listen og returnere item av node
 void *list_popfirst(list_t *list) {
     if (list->head == NULL){
         printf("\nERROR: List has no head");
@@ -103,11 +116,11 @@ void *list_popfirst(list_t *list) {
     void *tmp_item = tmp_node->item;
     list->head = list->head->next;
     free(tmp_node);
-    tmp_node = NULL;
     list->length--;
     return tmp_item;
 } 
 
+// Fjerner siste node i listen og returnere item av node
 void *list_poplast(list_t *list) {
     if (list->tail == NULL)
     {
@@ -123,6 +136,7 @@ void *list_poplast(list_t *list) {
     return tmp_item;    
 }
 
+// Funksjon som finner item i listen. Bruker cmpfn funksjon for å sammenligne items i listen, iterer gjennom listen til noden er funnet eller ikke (returnere 1 eller 0 henholdsvis)
 int list_contains(list_t *list, void *item) {
     if (list == NULL) {
         printf("\nERROR: List does not exist");
@@ -147,6 +161,8 @@ int list_contains(list_t *list, void *item) {
 
 /* ---- list iterator ---- */
 
+
+// Lager en liste iterator for å gå gjennom listen. Returnere peker på iterator. Iterator har en node som fungerer brukes til å itereres gjennom listen. 
 list_iter_t *list_createiter(list_t *list) {
     list_iter_t *iter = malloc(sizeof(list_iter_t));
     iter->node = list->head;
@@ -161,6 +177,7 @@ list_iter_t *list_createiter(list_t *list) {
 
 }
 
+// Ødelegger iterator
 void list_destroyiter(list_iter_t *iter) {
     if (iter == NULL){
         printf("\nERROR: No iter to destroy");
@@ -169,8 +186,9 @@ void list_destroyiter(list_iter_t *iter) {
     iter = NULL;
 }
 
+// Hvis iterator er utenfor listen (gått ut av listens lengde), så returnere den 0.
 int list_hasnext(list_iter_t *iter) {
-    if (iter->node  == NULL)
+    if (iter->node == NULL)
     {
         return 0;
     }
@@ -179,12 +197,15 @@ int list_hasnext(list_iter_t *iter) {
     }
 }
 
+
+// Returnere item for noden som iteratoren er på. Går videre til neste node i listen. 
 void *list_next(list_iter_t *iter) {
-    char *tmp = iter->node->item;
+    void *tmp = iter->node->item;
     iter->node = iter->node->next;
     return tmp;
 }
 
+// Setter iterator tilbake til start
 void list_resetiter(list_iter_t *iter) {
     if (iter->list->head == NULL)
     {
@@ -280,15 +301,52 @@ static lnode_t *mergesort_(lnode_t *head, cmp_fn cmpfn) {
     return merge(head, half, cmpfn);
 }
 
-void list_sort(list_t *list) {
-    /* Recursively sort the list */
-    list->head = mergesort_(list->head, list->cmpfn);
+// void list_sort(list_t *list) {
+//     /* Recursively sort the list */
+//     list->head = mergesort_(list->head, list->cmpfn);
 
-    /* Fix the tail and prev links */
-    lnode_t *prev = NULL;
-    for (lnode_t *n = list->head; n != NULL; n = n->next) {
-        n->prev = prev;
-        prev = n;
+//     /* Fix the tail and prev links */
+//     lnode_t *prev = NULL;
+//     for (lnode_t *n = list->head; n != NULL; n = n->next) {
+//         n->prev = prev;
+//         prev = n;
+//     }
+//     list->tail = prev;
+// }
+
+ // test fra oblig 1
+ 
+void swap(lnode_t *a, lnode_t *b)  
+{  
+    void *temp = a->item;  
+    a->item = b->item;  
+    b->item = temp;  
+}  
+
+void list_sort(list_t *list) {
+    printf("test");
+    int swapped;
+    lnode_t *start;
+    lnode_t *node_ptr;
+    if (list->head == NULL)
+    {
+        PANIC("ERROR: list->head does not exist in list_sort");
     }
-    list->tail = prev;
-}
+    do {
+        swapped = 0;
+        start = list->head;
+        while (start->next != node_ptr)
+        {
+            if (list->cmpfn(start->item,start->next->item) > 0)
+            {
+                swap(start, start->next);
+                swapped = 1;
+            }
+            start = start->next;
+        }
+        node_ptr = start;
+    }
+    while(swapped);
+    }
+
+

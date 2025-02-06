@@ -15,7 +15,7 @@
 /* attribute intentionally unused function (silence warning) */
 #define ATTR_UNUSED __attribute__((unused))
 
-
+typedef int (*charcmp)(const void *, const void *);
 /**
  * @brief Type of comparison function
  *

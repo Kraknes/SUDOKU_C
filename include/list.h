@@ -14,9 +14,9 @@
 struct list;
 
 /**
- * Type of list. `b_tree_t` is an alias for `struct list`
+ * Type of list. `list_t` is an alias for `struct list`
  */
-typedef struct b_tree b_tree_t;
+typedef struct list list_t;
 
 /**
  * @brief Create a new, empty list that uses the given comparison function
@@ -24,21 +24,21 @@ typedef struct b_tree b_tree_t;
  * @param cmpfn: reference to comparison function
  * @returns A pointer to the newly allocated list, or `NULL` on failure.
  */
-b_tree_t *list_create(cmp_fn cmpfn);
+list_t *list_create(charcmp cmpfn);
 
 /**
  * @brief Destroy a list, and optionally its items.
  * @param list: pointer to list
  * @param item_free: nullable. If present, called on all items
  */
-void list_destroy(b_tree_t *list, free_fn item_free);
+void list_destroy(list_t *list, free_fn item_free);
 
 /**
  * @brief Get the number of items in a given list, colloquially referred to as its length
  * @param list: pointer to list
  * @returns Number of items in `list`
  */
-size_t list_length(b_tree_t *list);
+size_t list_length(list_t *list);
  
 /**
  * @brief Add an item to the start of the given list
@@ -46,7 +46,7 @@ size_t list_length(b_tree_t *list);
  * @param item: pointer to item to be added
  * @returns 0 on success, otherwise a negative error code
  */
-int list_addfirst(b_tree_t *list, void *item);
+int list_addfirst(list_t *list, void *item);
 
 /**
  * @brief Add an item to the end of the given list
@@ -54,7 +54,7 @@ int list_addfirst(b_tree_t *list, void *item);
  * @param item: pointer to item to be added
  * @returns 0 on success, otherwise a negative error code
  */
-int list_addlast(b_tree_t *list, void *item);
+int list_addlast(list_t *list, void *item);
 
 /**
  * @brief Remove the first item from the given list
@@ -62,7 +62,7 @@ int list_addlast(b_tree_t *list, void *item);
  * @returns A pointer to the removed item
  * @warning should panic if list is empty
  */
-void *list_popfirst(b_tree_t *list);
+void *list_popfirst(list_t *list);
 
 /**
  * @brief Remove the last item from the given list
@@ -70,7 +70,7 @@ void *list_popfirst(b_tree_t *list);
  * @returns A pointer to the removed item
  * @warning should panic if list is empty
  */
-void *list_poplast(b_tree_t *list);
+void *list_poplast(list_t *list);
 
 /**
  * @brief Search for an item in the given list
@@ -78,14 +78,14 @@ void *list_poplast(b_tree_t *list);
  * @param item: pointer to an item that compares as equal, using the list cmpfn
  * @returns 1 if the item was found, otherwise 0
  */
-int list_contains(b_tree_t *list, void *item);
+int list_contains(list_t *list, void *item);
 
 /**
  * @brief Sorts the items of the given list, using the comparison function
  * of the list to determine the ordering of the items.
  * @param list: pointer to list
  */
-void list_sort(b_tree_t *list);
+void list_sort(list_t *list);
 
 
 /**
@@ -98,7 +98,7 @@ typedef struct list_iter list_iter_t;
  * @param list: pointer to list
  * @returns A pointer to the newly allocated iterator, or `NULL` on failure.
  */
-list_iter_t *list_createiter(b_tree_t *list);
+list_iter_t *list_createiter(list_t *list);
 
 /**
  * @brief Destroy a list iterator. Does not free the underlying list

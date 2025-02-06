@@ -12,19 +12,21 @@
 struct node{
     void *key;
     void *value;
-    void *next;
+    void *key_size;
+    struct node *next;
 };
 typedef struct node h_node;
 
 struct map_t{
     size_t length;
     size_t capacity;
-    h_node *head;
+    struct node *head;
     struct node **hashtables;
 };
 
 map_t *map_create() {
     // Allokere minne til hashmap
+    printf("\nCreating hashmap");
     struct map_t *map = malloc(sizeof(struct map_t));
 
     if (map == NULL){
@@ -33,9 +35,11 @@ map_t *map_create() {
     }
     map->length = 0;    
     map->capacity = SIZE_CAPACITY;
+    map_length(map);
+    printf("\nmap->capacity is: %d", map->capacity);
 
     // allokere minne til hash table * capacity (antatt antall på tilførsel)
-    map->hashtables =(struct node**) malloc(sizeof(h_node) * map->capacity);
+    map->hashtables = malloc(sizeof(h_node) * map->capacity);
 
     if (map->hashtables == NULL){
         printf("ERROR: Failed to malloc map->hashtable in *map_create");
@@ -49,23 +53,25 @@ map_t *map_create() {
         map->hashtables[i] = NULL;
         // printf("\n%llu", map->hashtables[i]);
     }
+    printf("\n-------------------------");
     return map;
 }
 
 void map_destroy(struct map_t *map) {
-    
-    for (size_t i = 0; i < map->length; i++)
-    {   
+    printf("\n Destroying map");
+    for (size_t i = 0; i <= map->length; i++)
+    {
         h_node *tmp = map->head;
         map->head = map->head->next;
         free(tmp);
-        tmp = NULL;
     }
+    printf("\n After freeing all nodes length is now: %d", map->length);
     free(map);
     map = NULL;
 }
 
 size_t map_length(struct map_t *map) {
+    printf("\nmap->length is: %d", map->length);
     return map->length;
 }
 
@@ -97,19 +103,30 @@ void *map_insert(struct map_t *map, void *key, size_t key_size, void *value) {
     x. Finne ut av key_size, ka e funskjonen    
     */
 
-    // lager node for entry i hash table
+    // Lager node for entry i hash table
     h_node *node = malloc(sizeof(h_node));
 
+    // Hvis noe galt skjer med allokering av minne
     if (node == NULL){
         printf("ERROR: Failed to malloc h_node in *map_insert");
         return NULL;
     }
 
+    // Setter inn variabler
     node->key = key;
     node->value = value;
-    node->next = key_size;
-    printf("\nKey is: %s", node->key);
+    node->key_size = key_size;
+    printf("\nNew added key is: %s", node->key);
 
+    // Har kontroll på medlemene med linkedlist for enklere map_destroy
+    if (map->length == 0){
+        map->head = node;
+    }
+    else{
+        node->next = map->head;
+        map->head = node;
+    }
+    
     // lager en hashed key av nøkkelen
     uint64_t hashed_key = hasher(key);
     printf("\n Hashed key is: %llu", hashed_key);
@@ -120,14 +137,15 @@ void *map_insert(struct map_t *map, void *key, size_t key_size, void *value) {
 
     if (map->hashtables[hashed_index] != NULL)
     {
-        printf("\n Position is already taken");
+        printf("\nERROR: Position is already taken. Returns out of function");
+        printf("\n-------------------------");
         return map->hashtables[hashed_index];
     }
     
     map->hashtables[hashed_index] = node;
-    printf("\nValue at inserted position is: %d", map->hashtables[hashed_index]->value);
-    // øker "lengden"/antall medlemmer av array
+    printf("\nValue at position %d is: %d", hashed_index, map->hashtables[hashed_index]->value);
     map->length++;
+    map_length(map);
     printf("\n-------------------------");
     return NULL;
 }
@@ -142,7 +160,7 @@ void *map_remove(struct map_t *map, void *key) {
 
     // modolu av array størrelse for å få unik index til array
     long long unsigned hashed_index = hashed_key % map->capacity;
-    
+    printf("\nRemoving at position %d with key %s", hashed_index, key);
     // Hvis keyen ikke eksistere i hash tablen
     if (map->hashtables[hashed_index] == NULL){
         printf("\nERROR: No entry in this hash key in *map_remove");
@@ -152,7 +170,10 @@ void *map_remove(struct map_t *map, void *key) {
     void *rt_value = map->hashtables[hashed_index]->value;
     free(map->hashtables[hashed_index]);
     map->hashtables[hashed_index] = NULL;
+    map->length--;
+    map_length(map);
     fflush(stdout);
+    printf("\n-------------------------");
     return rt_value;
 }
 
@@ -164,13 +185,14 @@ void *map_get(struct map_t *map, void *key) {
     long long unsigned hashed_index = hashed_key % map->capacity;
 
     if (map->hashtables[hashed_index] == NULL){
-        printf("\nERROR: No entry in this hash key in *map_get");
+        printf("\nmap_get: ERROR: No entry in this hash key in *map_get with key: %s", key);
+        printf("\n-------------------------");
         return 0;
     }
 
     void *rt_value = map->hashtables[hashed_index]->value;
-    free(map->hashtables[hashed_index]);
-    printf("\nReturned value is: %d", rt_value);
+    printf("\nReturn value with map_get at position %d is: %d", hashed_index, map->hashtables[hashed_index]->value);
+    printf("\n-------------------------");
     return rt_value;
 }
 
@@ -181,21 +203,26 @@ int compare(const char *a, const char *b) {
 int main(){
     fflush(stdout);
     struct map_t *hashmap = map_create();
-    map_insert(hashmap, "hey", 6, 10);
-    map_insert(hashmap, "b", 6, 15);
-    map_insert(hashmap, "a", 6, 30);
-
+    void *hallo = map_insert(hashmap, "hey", 6, 10);
+    printf("\n HVis denne er NULL/0 så er alt OK med map_insert: %p", hallo);
     map_get(hashmap, "hey");
+    map_insert(hashmap, "b", 6, 15);
     map_get(hashmap, "b");
+    map_insert(hashmap, "a", 6, 30);
     map_get(hashmap, "a");
+    
+    // test for å finne noe som ikke eksistere
     map_get(hashmap, "c");
 
+    // test for å sette i noe som er der fra før
     map_insert(hashmap, "hey", 6, 40);
-    void *test2 = map_remove(hashmap, "hey");
-    void *test = map_get(hashmap, "hey");
-    printf("\n %s", test2);
 
-    //problemer med test2, får ikke printet
+    // prøver ut return  funksjonene
+    void *test2 = map_remove(hashmap, "hey");
+    printf("\n Value at removed node is: %d", test2);
+    void *test = map_get(hashmap, "hey");
+    map_destroy(hashmap);
+
 }
 
 
